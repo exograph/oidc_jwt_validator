@@ -7,8 +7,14 @@ use std::{
         atomic::{AtomicBool, AtomicU64, Ordering},
         Arc,
     },
-    time::{Duration, Instant},
+    time::Duration,
 };
+
+// The std::time::Instance panics on wasm, so we use web_time::Instance instead
+#[cfg(not(target_family = "wasm"))]
+use std::time::Instant;
+#[cfg(target_family = "wasm")]
+use web_time::Instant;
 
 use crate::{
     util::{current_time, decode_jwk},

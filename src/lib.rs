@@ -157,12 +157,16 @@ impl Validator {
             self.cache_state.set_is_revalidating(true);
             info!("Spawning Task to re-validate JWKS");
             let a = self.clone();
-            #[allow(unused_must_use)]
-            tokio::task::spawn(async move {
-                a.update_cache().await;
+
+            let update_work = async move {
+                let _ = a.update_cache().await;
                 a.cache_state.set_is_revalidating(false);
                 a.notifier.notify_waiters();
-            });
+            };
+            #[cfg(not(target_arch = "wasm32"))]
+            tokio::task::spawn(update_work);
+            #[cfg(target_arch = "wasm32")]
+            wasm_bindgen_futures::spawn_local(update_work);
         }
     }
 
