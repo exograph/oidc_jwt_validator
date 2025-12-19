@@ -8,20 +8,24 @@ repository = "https://github.com/MinisculeGirraffe/oidc_jwt_validator"
 description = "Batteries included validaton of Access Tokens from an OIDC Provider"
 readme = "README.md"
 
+[features]
+aws_lc_rs = ["jsonwebtoken/aws_lc_rs"]
+rust_crypto = ["jsonwebtoken/rust_crypto"]
+
 [dependencies]
-jsonwebtoken = "9"
-tokio = { version = "1.22.0", features = ["sync"] }
-thiserror = "1.0.37"
+jsonwebtoken = { version = "10", default-features = false }
+tokio = { version = "1", features = ["sync"] }
+thiserror = "2"
 reqwest = { version = "0.12", default-features = false, features = ["json"] }
-serde = {version = "1.0.147", features = ["derive"] }
-base64 = "0.22.0"
-log = "0.4.17"
+serde = { version = "1", features = ["derive"] }
+base64 = "0.22"
+log = "0.4"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen-futures = { version = "0.4.42" }
-web-time = "1.1.0"
+wasm-bindgen-futures = { version = "0.4" }
+web-time = "1.1"
 
 [dev-dependencies]
 actix-web = { version = "4.2.1" }
 serde_json = "1.0.89"
-tokio = { version = "1.22.0", features = ["full"] }
+tokio = { version = "1", features = ["full"] }
