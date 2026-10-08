@@ -39,6 +39,7 @@ pub(crate) fn decode_jwk(
 
             Some(DecodingKey::from_ed_der(&der))
         }
+        _ => None,
     };
 
     let alg = jwk.common.key_algorithm.map(to_algorithm);
@@ -95,6 +96,54 @@ pub(crate) fn normalize_url(url: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn rejects_unknown_jwk_type() {
+        let jwk: Jwk = serde_json::from_value(serde_json::json!({
+            "kty": "unsupported-key-type",
+            "kid": "unknown-key",
+            "alg": "RS256"
+        }))
+        .expect("unknown key types should deserialize so supported keys remain usable");
+
+        assert!(matches!(
+            decode_jwk(&jwk, &ValidationSettings::default()),
+            Err(FetchError::InvalidJWK)
+        ));
+    }
+
+    #[test]
+    fn validates_signed_tokens_and_preserves_expiration_errors() {
+        let secret = b"0123456789abcdef0123456789abcdef0123456789abcdef";
+        let jwk: Jwk = serde_json::from_value(serde_json::json!({
+            "kty": "oct",
+            "kid": "test-key",
+            "alg": "HS256",
+            "k": URL_SAFE_NO_PAD.encode(secret)
+        }))
+        .unwrap();
+        let (_, info) = decode_jwk(&jwk, &ValidationSettings::default()).unwrap();
+
+        let token = |expiration| {
+            jsonwebtoken::encode(
+                &jsonwebtoken::Header::new(Algorithm::HS256),
+                &serde_json::json!({ "sub": "user-1", "exp": expiration }),
+                &jsonwebtoken::EncodingKey::from_secret(secret),
+            )
+            .unwrap()
+        };
+
+        let claims = info
+            .decode::<serde_json::Value>(&token(current_time() + 3600))
+            .unwrap();
+        assert_eq!(claims.claims["sub"], "user-1");
+        let error = info.decode::<serde_json::Value>(&token(1)).unwrap_err();
+        assert!(matches!(
+            error,
+            crate::ValidationError::ValidationFailed(ref error)
+                if matches!(error.kind(), jsonwebtoken::errors::ErrorKind::ExpiredSignature)
+        ));
+    }
 
     #[test]
     fn test_normalize_url() {

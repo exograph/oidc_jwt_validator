@@ -13,7 +13,7 @@ aws_lc_rs = ["jsonwebtoken/aws_lc_rs"]
 rust_crypto = ["jsonwebtoken/rust_crypto"]
 
 [dependencies]
-jsonwebtoken = { version = "10", default-features = false }
+jsonwebtoken = { version = "11.1.0", default-features = false }
 tokio = { version = "1", features = ["sync"] }
 thiserror = "2"
 reqwest = { version = "0.13", default-features = false, features = ["json"] }
